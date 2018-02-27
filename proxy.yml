@@ -5,6 +5,7 @@ volumes:
   certs:
   vhosts:
   html:
+  jenkins_home:
 services:
   # reverse proxy
   nginxproxy:
@@ -43,3 +44,25 @@ services:
       - nginxproxy
 #    environment:
 #      - ACME_CA_URI=https://acme-staging.api.letsencrypt.org/directory
+  jenkins_master:
+    build:
+      context: ./jenkins-master
+      dockerfile: Dockerfile
+    container_name: ci
+    restart:
+      unless-stopped
+    depends_on:
+      - nginxproxy
+      - nginxproxy_comp
+    networks:
+      - ext
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    ports:
+      - 8080:8080
+      - 50000:50000
+    environment:
+      - VIRTUAL_PORT=8080
+      - VIRTUAL_HOST=ci.sapmachine.net
+      - LETSENCRYPT_HOST=ci.sapmachine.net
+      - LETSENCRYPT_EMAIL=sapmachine@sap.com
