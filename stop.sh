@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker stop $(docker ps -a -q)
+docker-compose -f ./compose.yml stop
