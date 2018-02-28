@@ -87,3 +87,20 @@ services:
       - VIRTUAL_HOST=dist.sapmachine.net
       - LETSENCRYPT_HOST=dist.sapmachine.net
       - LETSENCRYPT_EMAIL=sapmachine@sap.com
+  redirect_server:
+    build:
+      context: ./redirect
+      dockerfile: Dockerfile
+    container_name: redirect
+    restart:
+      unless-stopped
+    depends_on:
+      - nginxproxy
+      - nginxproxy_comp
+    networks:
+      - ext
+    environment:
+      - VIRTUAL_PORT=80
+      - VIRTUAL_HOST=sapmachine.net
+      - LETSENCRYPT_HOST=sapmachine.net
+      - LETSENCRYPT_EMAIL=sapmachine@sap.com
