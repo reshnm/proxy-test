@@ -33,7 +33,7 @@ if (!isAlreadyInitialized()) {
     println "--> creating local user 'SapMachine'"
     File passwordFile = new File("${jenkins_home}/secrets/sapmachinePassword")
     String password = UUID.randomUUID().toString().replace("-", "")
-    passwordFile.write(password)
+    passwordFile.write("${password}\n")
 
     def hudsonRealm = new HudsonPrivateSecurityRealm(false)
     hudsonRealm.createAccount('SapMachine', password)
@@ -47,6 +47,7 @@ if (!isAlreadyInitialized()) {
     println "* SapMachine Password: ${password}"
     println "********************************************************"
     println "--> creating local user 'SapMachine' ... done"
+
 
     println "--> importing keys"
     runCmd("gpg --import-ownertrust /var/pkg/deb/keys/sapmachine.ownertrust")
