@@ -4,7 +4,7 @@ if [ -d sapmachine ]; then
     rm -rf sapmachine
 fi
 
-mdkir sapmachine
+mkdir sapmachine
 cp -r compose.yml sapmachine
 cp -r ci sapmachine
 cp -r dist sapmachine
