@@ -6,6 +6,7 @@ volumes:
   vhosts:
   html:
   jenkins_home:
+  pkg:
 services:
   # reverse proxy
   nginxproxy:
@@ -58,6 +59,7 @@ services:
       - ext
     volumes:
       - jenkins_home:/var/jenkins_home
+      - pkg:/var/pkg
     ports:
       - 8080:8080
       - 50000:50000
@@ -65,4 +67,26 @@ services:
       - VIRTUAL_PORT=8080
       - VIRTUAL_HOST=ci.sapmachine.net
       - LETSENCRYPT_HOST=ci.sapmachine.net
+      - LETSENCRYPT_EMAIL=sapmachine@sap.com
+  dist_server:
+    build:
+      context: ./dist
+      dockerfile: Dockerfile
+    container_name: dist
+    restart:
+      unless-stopped
+    depends_on:
+      - nginxproxy
+      - nginxproxy_comp
+      - jenkins_master
+    networks:
+      - ext
+    volumes:
+      - pkg:/var/pkg
+    ports:
+      - 80:80
+    environment:
+      - VIRTUAL_PORT=80
+      - VIRTUAL_HOST=dist.sapmachine.net
+      - LETSENCRYPT_HOST=dist.sapmachine.net
       - LETSENCRYPT_EMAIL=sapmachine@sap.com
