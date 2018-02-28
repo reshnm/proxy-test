@@ -1,2 +1,4 @@
-ci/keys/alpine/*
-ci/keys/debian/*
+ci/keys/alpine/*.rsa
+ci/keys/alpine/*.rsa.pub
+ci/keys/debian/*.key
+ci/keys/debian/*.ownertrust
