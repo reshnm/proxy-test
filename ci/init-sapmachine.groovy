@@ -29,6 +29,11 @@ if (!passwordFile.exists()) {
     println "********************************************************"
     println "--> creating local user 'SapMachine' ... done"
 
+    println "--> importing keys"
+    runCmd("gpg --import-ownertrust /var/pkg/deb/keys/sapmachine.ownertrust")
+    runCmd("gpg --import /var/pkg/deb/keys/sapmachine.secret.key")
+    println "--> importing keys ... done"
+
     Thread.start {
         sleep 20000
         println "--> applying Jenkins configuration"
