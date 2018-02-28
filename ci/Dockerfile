@@ -14,6 +14,8 @@ RUN python /tmp/SapMachine-infrastructure/lib/jenkins_restore.py -s /tmp/SapMach
 RUN rm -rf /tmp/SapMachine-infrastructure
 
 COPY init-sapmachine.groovy /usr/share/jenkins/ref/init.groovy.d/init-sapmachine.groovy
+COPY init-credentials.groovy /usr/share/jenkins/ref/init.groovy.d/init-credentials.groovy
+COPY credentials.yml /tmp/credentials.yml
 
 
 USER root
@@ -28,6 +30,9 @@ COPY keys/debian/* /var/pkg/deb/keys/
 COPY keys/alpine/* /var/pkg/apk/keys/
 
 RUN chown -R jenkins:jenkins /var/pkg
+RUN chown jenkins:jenkins /tmp/credentials.yml
+RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/init-sapmachine.groovy
+RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/init-credentials.groovy
 
 
 USER jenkins

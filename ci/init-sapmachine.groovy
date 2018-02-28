@@ -32,6 +32,8 @@ if (!passwordFile.exists()) {
     println "--> importing keys"
     runCmd("gpg --import-ownertrust /var/pkg/deb/keys/sapmachine.ownertrust")
     runCmd("gpg --import /var/pkg/deb/keys/sapmachine.secret.key")
+    runCmd("rm -rf  /var/pkg/deb/keys/sapmachine.ownertrust")
+    runCmd("rm -rf /var/pkg/deb/keys/sapmachine.secret.key")
     println "--> importing keys ... done"
 
     Thread.start {
