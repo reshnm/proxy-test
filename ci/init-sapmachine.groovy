@@ -1,18 +1,37 @@
 import jenkins.model.*
 import hudson.security.*
+import hudson.util.Secret
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
+import org.jenkinsci.plugins.plaincredentials.*
+import org.jenkinsci.plugins.plaincredentials.impl.*
+import org.yaml.snakeyaml.Yaml
+
+jenkins_home = System.getenv("JENKINS_HOME")
+instance = Jenkins.getInstance()
 
 void runCmd(String cmd) {
     def process = new ProcessBuilder(cmd.split(" ")).redirectErrorStream(true).start()
     process.inputStream.eachLine { println it }
 }
 
-def jenkins_home = System.getenv("JENKINS_HOME")
-def instance = Jenkins.getInstance()
-File passwordFile = new File("${jenkins_home}/secrets/sapmachinePassword")
+boolean isAlreadyInitialized() {
+    File initFile = new File("${jenkins_home}/sapmachineInitialized")
 
-if (!passwordFile.exists()) {
+    if (!initFile.exists()) {
+        initFile.write("1")
+        return false
+    } else {
+        return true
+    }
+}
+
+if (!isAlreadyInitialized()) {
     println "--> creating local user 'SapMachine'"
-
+    File passwordFile = new File("${jenkins_home}/secrets/sapmachinePassword")
     String password = UUID.randomUUID().toString().replace("-", "")
     passwordFile.write(password)
 
@@ -35,6 +54,36 @@ if (!passwordFile.exists()) {
     runCmd("rm -rf  /var/pkg/deb/keys/sapmachine.ownertrust")
     runCmd("rm -rf /var/pkg/deb/keys/sapmachine.secret.key")
     println "--> importing keys ... done"
+
+
+    println "--> importing credentials"
+    def domain = Domain.global()
+    def store = instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+    Yaml parser = new Yaml()
+    def credentials = parser.load(("/tmp/credentials.yml" as File).text)
+
+    for (def secretText : credentials["secret_text"]) {
+        def secretTextCred = new StringCredentialsImpl(
+            CredentialsScope.GLOBAL,
+            secretText["id"],
+            secretText["description"],
+            Secret.fromString(secretText["text"]))
+        store.addCredentials(domain, secretTextCred)
+    }
+
+    for (def userPassword : credentials["user_password"]) {
+        def userPasswordCred = new UsernamePasswordCredentialsImpl(
+            CredentialsScope.GLOBAL,
+            userPassword["id"],
+            userPassword["description"],
+            userPassword["user"],
+            userPassword["password"])
+        store.addCredentials(domain, userPasswordCred)
+    }
+
+    runCmd("rm -rf /tmp/credentials.yml")
+    println "--> importing credentials ... done"
+
 
     Thread.start {
         sleep 20000
