@@ -1,4 +1,5 @@
 import jenkins.model.*
+import jenkins.security.s2m.AdminWhitelistRule
 import hudson.security.*
 import hudson.util.Secret
 import com.cloudbees.plugins.credentials.*
@@ -11,6 +12,7 @@ import org.jenkinsci.plugins.plaincredentials.impl.*
 import org.yaml.snakeyaml.Yaml
 
 jenkins_home = System.getenv("JENKINS_HOME")
+jenkins_root_url = "https://${System.getenv("VIRTUAL_HOST")}/"
 instance = Jenkins.getInstance()
 
 void runCmd(String cmd) {
@@ -18,36 +20,27 @@ void runCmd(String cmd) {
     process.inputStream.eachLine { println it }
 }
 
-boolean isAlreadyInitialized() {
-    File initFile = new File("${jenkins_home}/sapmachineInitialized")
+int getInitLevel() {
+    File initFile = new File("${jenkins_home}/sapmachineInitLevel")
 
     if (!initFile.exists()) {
-        initFile.write("1")
-        return false
-    } else {
-        return true
+        initFile.write("0")
     }
+
+    def initLevel = initFile.text.toInteger()
+    println "--> initLevel=${initLevel}"
+    return initLevel
 }
 
-if (!isAlreadyInitialized()) {
-    println "--> creating local user 'SapMachine'"
-    File passwordFile = new File("${jenkins_home}/secrets/sapmachinePassword")
-    String password = UUID.randomUUID().toString().replace("-", "")
-    passwordFile.write("${password}\n")
+void updateInitLevel() {
+    File initFile = new File("${jenkins_home}/sapmachineInitLevel")
 
-    def hudsonRealm = new HudsonPrivateSecurityRealm(false)
-    hudsonRealm.createAccount('SapMachine', password)
-    instance.setSecurityRealm(hudsonRealm)
+    def level = initFile.text.toInteger()
+    initFile.write(Integer.toString(level+1))
+}
 
-    def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
-    instance.setAuthorizationStrategy(strategy)
-    instance.save()
-
-    println "********************************************************"
-    println "* SapMachine Password: ${password}"
-    println "********************************************************"
-    println "--> creating local user 'SapMachine' ... done"
-
+if (0 == getInitLevel()) {
+    updateInitLevel()
 
     println "--> importing keys"
     runCmd("gpg --import-ownertrust /var/pkg/deb/keys/sapmachine.ownertrust")
@@ -85,13 +78,50 @@ if (!isAlreadyInitialized()) {
     runCmd("rm -rf /tmp/credentials.yml")
     println "--> importing credentials ... done"
 
+    // enable master slave security
+    instance.getInjector().getInstance(AdminWhitelistRule.class).setMasterKillSwitch(false)
 
     Thread.start {
-        sleep 20000
+        sleep 10000
         println "--> applying Jenkins configuration"
         runCmd("git clone https://github.com/sap/SapMachine-infrastructure /tmp/SapMachine-infrastructure")
         runCmd("python /tmp/SapMachine-infrastructure/lib/jenkins_restore.py -s /tmp/SapMachine-infrastructure -t ${jenkins_home}")
         runCmd("rm -rf /tmp/SapMachine-infrastructure")
         println "--> applying Jenkins configuration ... done"
+
+        // reload the configuration after it was written to disk
+        instance.doReload()
+
+        Thread.start {
+            sleep 5000
+
+            jlc = JenkinsLocationConfiguration.get()
+            jlc.setUrl(jenkins_root_url)
+            jlc.save()
+
+            println "--> store slave information"
+            for (slave in hudson.model.Hudson.instance.slaves) {
+                File slaveSecret = new File("/var/slaves/${slave.name}.txt")
+                slaveSecret.write("${slave.getComputer().getJnlpMac()}")
+            }
+            println "--> store slave information ... done"
+
+            // restart the jenkins instance
+            instance.restart()
+
+            println "--> creating local user 'SapMachine'"
+            File passwordFile = new File("${jenkins_home}/secrets/sapmachinePassword")
+            String password = UUID.randomUUID().toString().replace("-", "")
+            passwordFile.write("${password}\n")
+
+            def hudsonRealm = new HudsonPrivateSecurityRealm(false)
+            hudsonRealm.createAccount('SapMachine', password)
+            instance.setSecurityRealm(hudsonRealm)
+
+            def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+            instance.setAuthorizationStrategy(strategy)
+            instance.save()
+            println "--> creating local user 'SapMachine' ... done"
+        }
     }
 }

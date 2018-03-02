@@ -19,6 +19,7 @@ COPY credentials.yml /tmp/credentials.yml
 
 USER root
 RUN mkdir /var/pkg
+RUN mkdir /var/slaves
 
 RUN mkdir -p /var/pkg/deb/amd64
 RUN mkdir -p /var/pkg/deb/keys
@@ -29,6 +30,7 @@ COPY keys/debian/* /var/pkg/deb/keys/
 COPY keys/alpine/* /var/pkg/apk/keys/
 
 RUN chown -R jenkins:jenkins /var/pkg
+RUN chown -R jenkins:jenkins /var/slaves
 RUN chown jenkins:jenkins /tmp/credentials.yml
 RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/*.groovy
 
@@ -36,4 +38,5 @@ RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/*.groovy
 USER jenkins
 ENV JAVA_OPTS=-Djenkins.install.runSetupWizard=false
 VOLUME /var/pkg
+VOLUME /var/slaves
 WORKDIR /var/jenkins_home

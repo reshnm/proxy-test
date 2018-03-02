@@ -7,6 +7,7 @@ volumes:
   html:
   jenkins_home:
   pkg:
+  slaves:
 services:
   # reverse proxy
   nginxproxy:
@@ -43,8 +44,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     volumes_from:
       - nginxproxy
-#    environment:
-#      - ACME_CA_URI=https://acme-staging.api.letsencrypt.org/directory
+  # environment:
+  #   - ACME_CA_URI=https://acme-staging.api.letsencrypt.org/directory
+  # jenkins master server
   jenkins_master:
     build:
       context: ./ci
@@ -60,13 +62,16 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - pkg:/var/pkg
+      - slaves:/var/slaves
     ports:
+      # exposed port for jenkins slaves
       - 50000:50000
     environment:
       - VIRTUAL_PORT=8080
-      - VIRTUAL_HOST=ci.sapmachine.net
-      - LETSENCRYPT_HOST=ci.sapmachine.net
-      - LETSENCRYPT_EMAIL=sapmachine@sap.com
+      - VIRTUAL_HOST=ci.${URL_ROOT}
+      - LETSENCRYPT_HOST=ci.${URL_ROOT}
+      - LETSENCRYPT_EMAIL=${SAPMACHINE_EMAIL}
+  # linux package distribution server
   dist_server:
     build:
       context: ./dist
@@ -84,9 +89,10 @@ services:
       - pkg:/var/pkg
     environment:
       - VIRTUAL_PORT=80
-      - VIRTUAL_HOST=dist.sapmachine.net
-      - LETSENCRYPT_HOST=dist.sapmachine.net
-      - LETSENCRYPT_EMAIL=sapmachine@sap.com
+      - VIRTUAL_HOST=dist.${URL_ROOT}
+      - LETSENCRYPT_HOST=dist.${URL_ROOT}
+      - LETSENCRYPT_EMAIL=${SAPMACHINE_EMAIL}
+  # redirects to the sapmachine github page
   redirect_server:
     build:
       context: ./redirect
@@ -101,6 +107,25 @@ services:
       - ext
     environment:
       - VIRTUAL_PORT=80
-      - VIRTUAL_HOST=sapmachine.net
-      - LETSENCRYPT_HOST=sapmachine.net
-      - LETSENCRYPT_EMAIL=sapmachine@sap.com
+      - VIRTUAL_HOST=${URL_ROOT}
+      - LETSENCRYPT_HOST=${URL_ROOT}
+      - LETSENCRYPT_EMAIL=${SAPMACHINE_EMAIL}
+  # jenkins ubuntu slave
+  ci_slave_ubuntu:
+      build:
+        context: ./ci-slave-ubuntu
+        dockerfile: Dockerfile
+      container_name: ci-slave-ubuntu
+      restart:
+        unless-stopped
+      depends_on:
+        - jenkins_master
+      networks:
+        - ext
+      volumes:
+        - pkg:/var/pkg
+        - slaves:/var/slaves
+      environment:
+        - MASTER_URL=https://ci.${URL_ROOT}/computer/${UBUNTU_SLAVE_NAME}/slave-agent.jnlp
+        - SLAVE_NAME=${UBUNTU_SLAVE_NAME}
+        - SLAVE_NO_CERTIFICATE_CHECK=${SLAVE_NO_CERTIFICATE_CHECK}
