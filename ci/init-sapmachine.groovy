@@ -1,3 +1,5 @@
+@Grab('org.yaml:snakeyaml:1.17')
+
 import jenkins.model.*
 import jenkins.security.s2m.AdminWhitelistRule
 import hudson.security.*
