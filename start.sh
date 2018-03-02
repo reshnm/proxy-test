@@ -11,6 +11,7 @@ cp -r ci sapmachine
 cp -r dist sapmachine
 cp -r redirect sapmachine
 cp -r ci-slave-ubuntu sapmachine
+cp -r ci-slave-alpine sapmachine
 
 cd sapmachine
 docker-compose -f ./compose.yml up -d $1

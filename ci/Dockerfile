@@ -18,7 +18,6 @@ COPY credentials.yml /tmp/credentials.yml
 
 
 USER root
-RUN mkdir /var/pkg
 RUN mkdir /var/slaves
 
 RUN mkdir -p /var/pkg/deb/amd64

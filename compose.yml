@@ -8,6 +8,11 @@ volumes:
   jenkins_home:
   pkg:
   slaves:
+  ci_slave_ubuntu-jenkins:
+  ci_slave_ubuntu-gpg:
+  ci_slave_ubuntu-agent:
+  ci_slave_alpine-jenkins:
+  ci_slave_alpine-agent:
 services:
   # reverse proxy
   nginxproxy:
@@ -123,9 +128,33 @@ services:
       networks:
         - ext
       volumes:
+        - ci_slave_ubuntu-jenkins:/home/jenkins/.jenkins
+        - ci_slave_ubuntu-gpg:/home/jenkins/.gnupg
+        - ci_slave_ubuntu-agent:/home/jenkins/agent
         - pkg:/var/pkg
         - slaves:/var/slaves
       environment:
         - MASTER_URL=https://ci.${URL_ROOT}/computer/${UBUNTU_SLAVE_NAME}/slave-agent.jnlp
         - SLAVE_NAME=${UBUNTU_SLAVE_NAME}
+        - SLAVE_NO_CERTIFICATE_CHECK=${SLAVE_NO_CERTIFICATE_CHECK}
+  # jenkins alpine slave
+  ci_slave_alpine:
+      build:
+        context: ./ci-slave-alpine
+        dockerfile: Dockerfile
+      container_name: ci-slave-alpine
+      restart:
+        unless-stopped
+      depends_on:
+        - jenkins_master
+      networks:
+        - ext
+      volumes:
+        - ci_slave_alpine-jenkins:/home/jenkins/.jenkins
+        - ci_slave_alpine-agent:/home/jenkins/agent
+        - pkg:/var/pkg
+        - slaves:/var/slaves
+      environment:
+        - MASTER_URL=https://ci.${URL_ROOT}/computer/${ALPINE_SLAVE_NAME}/slave-agent.jnlp
+        - SLAVE_NAME=${ALPINE_SLAVE_NAME}
         - SLAVE_NO_CERTIFICATE_CHECK=${SLAVE_NO_CERTIFICATE_CHECK}

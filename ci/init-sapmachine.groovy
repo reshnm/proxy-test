@@ -42,14 +42,6 @@ void updateInitLevel() {
 if (0 == getInitLevel()) {
     updateInitLevel()
 
-    println "--> importing keys"
-    runCmd("gpg --import-ownertrust /var/pkg/deb/keys/sapmachine.ownertrust")
-    runCmd("gpg --import /var/pkg/deb/keys/sapmachine.secret.key")
-    runCmd("rm -rf  /var/pkg/deb/keys/sapmachine.ownertrust")
-    runCmd("rm -rf /var/pkg/deb/keys/sapmachine.secret.key")
-    println "--> importing keys ... done"
-
-
     println "--> importing credentials"
     def domain = Domain.global()
     def store = instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
