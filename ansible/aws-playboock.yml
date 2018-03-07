@@ -1,10 +1,9 @@
 # ansible 2.4
 ---
-  - name: Provision an EC2 Instance
+  - name: Setup AWS for SapMachine
     hosts: local
     connection: local
     gather_facts: False
-    tags: provisioning
 
     vars:
       instance_type: t2.micro

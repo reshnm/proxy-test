@@ -1,0 +1,60 @@
+# ansible 2.4
+---
+  - name: Setup SapMachine Master server
+    hosts: SapMachineMaster
+    gather_facts: False
+    pre_tasks:
+      - name: 'install python2'
+        raw: sudo apt-get -qq -y --no-install-recommends install python
+    vars:
+      ansible_user: ubuntu
+      ansible_ssh_private_key_file: SapMachine.pem
+
+    tasks:
+
+      - name: install docker
+        apt:
+          name: docker.io
+          state: latest
+          update_cache: yes
+          install_recommends: no
+        become: true
+
+      - name: install docker-compose
+        apt:
+          name: docker-compose
+          state: latest
+          install_recommends: no
+        become: true
+
+      - name: create sapmachine group
+        group:
+          name: sapmachine
+          state: present
+        become: true
+
+      - name: create sapmachine user
+        user:
+          name: sapmachine
+          comment: "SapMachine user"
+          group: sapmachine
+          groups: sapmachine, docker
+        become: true
+
+      - name: copy sapmachine_master files
+        synchronize:
+          src: ../../
+          dest: /home/sapmachine/sapmachine_master
+          recursive: yes
+          rsync_opts:
+            - "--exclude=.git*"
+            - "--exclude=ansible"
+        become: true
+
+      - name: set ownership of sapmachine_master
+        file:
+          path: /home/sapmachine/sapmachine_master
+          owner: sapmachine
+          group: sapmachine
+          recurse: yes
+        become: true
