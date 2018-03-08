@@ -9,6 +9,9 @@
     vars:
       ansible_user: ubuntu
       ansible_ssh_private_key_file: SapMachine.pem
+      slave_jar_version: 3.16
+      jenkins_master_url: https://ci.sapmachine.net/computer/agent-linux-x86_64-1/slave-agent.jnlp
+      jenkins_slave_name: agent-linux-x86_64-1
 
     tasks:
 
@@ -27,6 +30,13 @@
           install_recommends: no
         become: true
 
+      - name: install OpenJDK 8 JRE
+        apt:
+         name: openjdk-8-jre
+         state: latest
+         install_recommends: no
+        become: true
+
       - name: create sapmachine group
         group:
           name: sapmachine
@@ -39,6 +49,19 @@
           comment: "SapMachine user"
           group: sapmachine
           groups: sapmachine, docker
+        become: true
+
+      - name: create jenkins group
+        group:
+          name: jenkins
+          state: present
+        become: true
+
+      - name: create jenkins user
+        user:
+          name: jenkins
+          comment: "Jenkins user"
+          groups: jenkins, docker
         become: true
 
       - name: copy sapmachine_master files
@@ -59,10 +82,36 @@
           recurse: yes
         become: true
 
+      - name: create Jenkins Slave home directory
+        file:
+          path: /home/jenkins/slave-home
+          state: directory
+        become: true
+        become_user: jenkins
+
+      - name: download Jenkins Slave jar
+        get_url:
+          url: "https://repo.jenkins-ci.org/public/org/jenkins-ci/main/remoting//{{ slave_jar_version }}/remoting-{{ slave_jar_version }}.jar"
+          dest: /home/jenkins/slave.jar
+        become: true
+        become_user: jenkins
+
+      - name: copy Jenkins Slave files
+        synchronize:
+          src: ../ci-slave-local/start-slave.sh
+          dest: /home/jenkins/start-slave.sh
+        become: true
+        become_user: jenkins
+
       - name: stop all running docker container
         shell: docker stop $(docker ps -a -q)
         become: true
         become_user: sapmachine
+
+      - name: stop all Java processes
+        command: killall -9 java
+        become: true
+        ignore_errors: yes
 
       - name: start the docker container
         command: docker-compose -f ./compose.yml up -d --build
@@ -77,6 +126,18 @@
         become_user: sapmachine
         register: sapmachine_pw
 
+      - name: read Jenkins Slave secret
+        command: "docker exec ci bash /tmp/read-slave-secret.sh {{ jenkins_slave_name }}"
+        become: true
+        become_user: jenkins
+        register: slave_secret
+
+      - name: start Jenkins Slave
+        command: "/home/jenkins/start-slave.sh {{ jenkins_master_url }} {{ slave_secret.stdout }} -noCertificateCheck"
+        args:
+          chdir: /home/jenkins
+        become: true
+        become_user: jenkins
 
       - name: show Jenkins SapMachine password
         debug:

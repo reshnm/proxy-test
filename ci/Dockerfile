@@ -16,6 +16,7 @@ RUN rm -rf /tmp/SapMachine-infrastructure
 COPY init-sapmachine.groovy /usr/share/jenkins/ref/init.groovy.d/init-sapmachine.groovy
 COPY credentials.yml /tmp/credentials.yml
 COPY read_sapmachine_pw.sh /tmp/read_sapmachine_pw.sh 
+COPY read-slave-secret.sh /tmp/read-slave-secret.sh
 
 
 USER root
@@ -35,6 +36,8 @@ RUN chown jenkins:jenkins /tmp/credentials.yml
 RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/*.groovy
 RUN chown jenkins:jenkins /tmp/read_sapmachine_pw.sh
 RUN chmod +x /tmp/read_sapmachine_pw.sh
+RUN chown jenkins:jenkins /tmp/read-slave-secret.sh
+RUN chmod +x /tmp/read-slave-secret.sh
 
 
 USER jenkins
