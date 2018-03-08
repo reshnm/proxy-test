@@ -58,3 +58,29 @@
           group: sapmachine
           recurse: yes
         become: true
+
+      - name: stop all running docker container
+        shell: docker stop $(docker ps -a -q)
+        become: true
+        become_user: sapmachine
+
+      - name: start the docker container
+        command: docker-compose -f ./compose.yml up -d --build
+        args:
+          chdir: /home/sapmachine/sapmachine_master
+        become: true
+        become_user: sapmachine
+
+      - name: wait for Jenkins Master to come up
+        command: docker exec ci bash /tmp/read_sapmachine_pw.sh
+        become: true
+        become_user: sapmachine
+        register: sapmachine_pw
+
+
+      - name: show Jenkins SapMachine password
+        debug:
+          msg: 
+            - "user: SapMachine"
+            - "password: {{ sapmachine_pw.stdout }}"
+

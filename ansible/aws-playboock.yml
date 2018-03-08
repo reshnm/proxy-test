@@ -6,7 +6,7 @@
     gather_facts: False
 
     vars:
-      instance_type: t2.micro
+      instance_type: t2.large
       instance_name: (test) SapMachine Master
       security_group: (test) SapMachine Master
       image: ami-66506c1c

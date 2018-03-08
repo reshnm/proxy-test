@@ -15,6 +15,7 @@ RUN rm -rf /tmp/SapMachine-infrastructure
 
 COPY init-sapmachine.groovy /usr/share/jenkins/ref/init.groovy.d/init-sapmachine.groovy
 COPY credentials.yml /tmp/credentials.yml
+COPY read_sapmachine_pw.sh /tmp/read_sapmachine_pw.sh 
 
 
 USER root
@@ -32,6 +33,8 @@ RUN chown -R jenkins:jenkins /var/pkg
 RUN chown -R jenkins:jenkins /var/slaves
 RUN chown jenkins:jenkins /tmp/credentials.yml
 RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/*.groovy
+RUN chown jenkins:jenkins /tmp/read_sapmachine_pw.sh
+RUN chmod +x /tmp/read_sapmachine_pw.sh
 
 
 USER jenkins
