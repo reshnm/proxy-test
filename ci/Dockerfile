@@ -41,7 +41,8 @@ RUN chmod +x /usr/share/jenkins/read-slave-secret.sh
 
 
 USER jenkins
-ENV JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+ENV JAVA_ARGS="-XX:MaxPermSize=512m -Xms512m -Xmx1024m"
 VOLUME /var/pkg
 VOLUME /var/slaves
 WORKDIR /var/jenkins_home
