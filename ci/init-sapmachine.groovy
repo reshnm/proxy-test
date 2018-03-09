@@ -48,7 +48,7 @@ if (0 == getInitLevel()) {
     def domain = Domain.global()
     def store = instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
     Yaml parser = new Yaml()
-    def credentials = parser.load(("/tmp/credentials.yml" as File).text)
+    def credentials = parser.load(("/var/slaves/credentials.yml" as File).text)
 
     for (def secretText : credentials["secret_text"]) {
         def secretTextCred = new StringCredentialsImpl(
@@ -69,7 +69,7 @@ if (0 == getInitLevel()) {
         store.addCredentials(domain, userPasswordCred)
     }
 
-    runCmd("rm -rf /tmp/credentials.yml")
+    runCmd("rm -rf /var/slaves/credentials.yml")
     println "--> importing credentials ... done"
 
     // enable master slave security

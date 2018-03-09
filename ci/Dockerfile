@@ -14,9 +14,8 @@ RUN python /tmp/SapMachine-infrastructure/lib/jenkins_restore.py -s /tmp/SapMach
 RUN rm -rf /tmp/SapMachine-infrastructure
 
 COPY init-sapmachine.groovy /usr/share/jenkins/ref/init.groovy.d/init-sapmachine.groovy
-COPY credentials.yml /tmp/credentials.yml
-COPY read_sapmachine_pw.sh /tmp/read_sapmachine_pw.sh 
-COPY read-slave-secret.sh /tmp/read-slave-secret.sh
+COPY read-sapmachine-pw.sh /usr/share/jenkins/read-sapmachine-pw.sh
+COPY read-slave-secret.sh /usr/share/jenkins/read-slave-secret.sh
 
 
 USER root
@@ -29,15 +28,16 @@ RUN mkdir -p /var/pkg/apk/keys
 
 COPY keys/debian/* /var/pkg/deb/keys/
 COPY keys/alpine/* /var/pkg/apk/keys/
+COPY credentials.yml /var/slaves/credentials.yml
 
 RUN chown -R jenkins:jenkins /var/pkg
 RUN chown -R jenkins:jenkins /var/slaves
-RUN chown jenkins:jenkins /tmp/credentials.yml
-RUN chown jenkins:jenkins  /usr/share/jenkins/ref/init.groovy.d/*.groovy
-RUN chown jenkins:jenkins /tmp/read_sapmachine_pw.sh
-RUN chmod +x /tmp/read_sapmachine_pw.sh
-RUN chown jenkins:jenkins /tmp/read-slave-secret.sh
-RUN chmod +x /tmp/read-slave-secret.sh
+RUN chown jenkins:jenkins /usr/share/jenkins/ref/init.groovy.d/*.groovy
+RUN chown jenkins:jenkins /var/slaves/credentials.yml
+RUN chown jenkins:jenkins /usr/share/jenkins/read-sapmachine-pw.sh
+RUN chown jenkins:jenkins /usr/share/jenkins/read-slave-secret.sh
+RUN chmod +x /usr/share/jenkins/read-sapmachine-pw.sh
+RUN chmod +x /usr/share/jenkins/read-slave-secret.sh
 
 
 USER jenkins
