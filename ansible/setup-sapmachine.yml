@@ -120,20 +120,20 @@
         shell: docker stop $(docker ps -a -q)
         become: yes
         become_user: sapmachine
-        ignore_errors: yes
+        failed_when: false
 
       # stop all running java processes (jenkins slave)
       - name: stop all Java processes
         command: killall -9 java
         become: yes
-        ignore_errors: yes
+        failed_when: false
 
       # update docker images
       - name: remove all docker container
         shell: docker rm $(docker ps -a -q)
         become: yes
         become_user: sapmachine
-        ignore_errors: yes
+        failed_when: false
 
       - name: purge dangling docker images
         command: docker images purge

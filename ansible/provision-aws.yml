@@ -6,10 +6,10 @@
     gather_facts: False
 
     vars:
-      instance_type: t2.large
-      instance_name: (test) SapMachine Master
-      security_group: (test) SapMachine Master
-      image: ami-66506c1c
+      instance_type: m4.2xlarge
+      instance_name: SapMachine Master
+      security_group: SapMachine Master
+      image: ami-66506c1c # Ubuntu 16.04
       keypair: SapMachine
       region: us-east-1
       zone: sapmachine.net
@@ -52,14 +52,21 @@
         register: basic_firewall
 
       - name: Launch the new EC2 Instance
-        local_action: ec2
-                      group={{ security_group }}
-                      instance_type={{ instance_type}}
-                      image={{ image }}
-                      wait=true
-                      region={{ region }}
-                      keypair={{ keypair }}
-                      count=1
+        local_action:
+          module: ec2
+          group: "{{ security_group }}"
+          instance_type: "{{ instance_type}}"
+          image: "{{ image }}"
+          wait: yes
+          region: "{{ region }}"
+          keypair: "{{ keypair }}"
+          count: 1
+          volumes:
+            - device_name: /dev/sda1
+              volume_type: gp2
+              volume_size: 1024
+              tags:
+                Name: "{{ instance_name }}"
         register: ec2
 
       - name: associate the elastic IP with the new EC2 instance
